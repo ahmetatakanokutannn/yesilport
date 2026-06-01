@@ -93,3 +93,35 @@
 - `dist/assets/index-CBM3OjHT.css`: `27.27 kB`, gzip `6.26 kB`
 - `dist/assets/index-ztwvcMpu.js`: `272.89 kB`, gzip `88.31 kB`
 - Süre: `245ms`
+
+## 2026-06-02 00:24:23 +03:00 - idecttDb eğitim verilerini courses.ts'e aktar
+
+**Ne yapıldı:** `frontend/src/data/courses.ts` dosyası 14 gerçek kursla tamamen yeniden yazıldı. Kurs tipi `instructor` alanını içerecek ve yalnız `FREE` seviye kullanacak şekilde güncellendi. Her kurs için tek ders eklendi; ders ve kurs `id` alanları Türkçe karakterleri sadeleştirilmiş benzersiz kebab-case slug olarak yazıldı. Google Drive dosya kimlikleri iframe uyumlu `https://drive.google.com/file/d/FILE_ID/preview` formatına dönüştürüldü. Eğitim kartları kırık backend görseli kullanmayacak şekilde mevcut tasarıma uygun `GraduationCap` ikon placeholder'ı ile güncellendi.
+
+**Oluşturulan/değiştirilen/silinen dosyalar:**
+- Değiştirildi: `frontend/src/data/courses.ts`
+- Değiştirildi: `frontend/src/App.tsx`
+- Değiştirildi: `frontend/dist/index.html`
+- Değiştirildi: `frontend/dist/assets/*`
+- Değiştirildi: `CODEX_CHANGELOG.md`
+
+**Veri özeti:**
+- Eklenen kurs: `14`
+- Eklenen ders/video: `14`
+- URL dönüşümü: DB'deki `/view?usp=sharing` formatı yerine tüm `videoUrl` alanları `/preview` formatında yazıldı.
+- DB dump dosyası `idecttDb_2026-06-01_033144.sql.gz` silinmedi ve değiştirilmedi.
+
+**Doğrulama:**
+- Node veri kontrolü: `courses=14`, `uniqueCourseIds=14`, `uniqueLessonIds=14`, `badPreviewUrls=0`
+- `cd frontend && npm run build`: başarılı.
+
+**Build çıktısı özeti:**
+- Vite: `v8.0.14`
+- Dönüştürülen modül: `1775`
+- Çıktı: `frontend/dist/`
+- `dist/index.html`: `0.48 kB`, gzip `0.30 kB`
+- `dist/assets/index-BvLR5xnO.css`: `27.34 kB`, gzip `6.27 kB`
+- `dist/assets/index-CYc0Cw_I.js`: `277.72 kB`, gzip `89.61 kB`
+- Süre: `332ms`
+
+**Sorun + çözüm:** Kurs veri taramasında yalnız genel placeholder metinleri (`input placeholder`, Google Maps placeholder) eşleşti; eski Drive placeholder, `/view?usp`, API, axios, `/uploads` veya YouTube kurs placeholder kalmadığı doğrulandı.
