@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem \"C:\\\\Users\\\\Atakan Okutan\\\\Desktop\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(ls -la)",
+      "Bash(cat package.json)",
+      "Bash(ls frontend/src)",
+      "Bash(ls backend/src)",
+      "Bash(ls src/data)",
+      "Bash(ls src/lib/api.ts)",
+      "Bash(ls src/data/courses.ts)",
+      "Bash(ls dist *)",
+      "Bash(ls ../CODEX_CHANGELOG.md)"
+    ]
+  }
+}

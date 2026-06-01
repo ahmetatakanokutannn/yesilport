@@ -1,0 +1,28 @@
+{
+  "nav": {
+    "home": "Anasayfa",
+    "platform": "Platform",
+    "regulations": "Mevzuat",
+    "services": "Hizmetler",
+    "sector": "Sektör",
+    "blog": "Blog",
+    "about": "Hakkımızda",
+    "contact": "İletişim",
+    "login": "Giriş Yap",
+    "start": "Ücretsiz Başla"
+  },
+  "home": {
+    "headline": "AB'ye İhracat Yapıyorsanız Karbon Artık Zorunlu",
+    "subtitle": "Lojistik sektörünün yeşil dönüşümü için tek platform"
+  },
+  "platform": { "title": "YeşilPORT Platformu" },
+  "regulations": { "title": "Mevzuat Merkezi" },
+  "services": { "title": "Hizmetler" },
+  "about": { "title": "Hakkımızda" },
+  "blog": { "title": "Blog ve Haberler" },
+  "contact": { "title": "İletişim" },
+  "auth": { "email": "E-posta", "password": "Şifre", "register": "Kayıt Ol" },
+  "panel": { "dashboard": "Panel", "calculation": "Karbon Hesaplama" },
+  "admin": { "dashboard": "Admin Paneli" },
+  "common": { "demo": "Ücretsiz Demo Al", "inspect": "Platforma Göz At", "save": "Kaydet", "send": "Gönder" }
+}

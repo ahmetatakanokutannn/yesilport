@@ -1,0 +1,28 @@
+{
+  "nav": {
+    "home": "Home",
+    "platform": "Platform",
+    "regulations": "Regulations",
+    "services": "Services",
+    "sector": "Sector",
+    "blog": "Blog",
+    "about": "About",
+    "contact": "Contact",
+    "login": "Login",
+    "start": "Start Free"
+  },
+  "home": {
+    "headline": "Carbon Is Now Mandatory If You Export to the EU",
+    "subtitle": "One platform for the green transformation of logistics"
+  },
+  "platform": { "title": "YeşilPORT Platform" },
+  "regulations": { "title": "Regulation Hub" },
+  "services": { "title": "Services" },
+  "about": { "title": "About" },
+  "blog": { "title": "Blog and News" },
+  "contact": { "title": "Contact" },
+  "auth": { "email": "Email", "password": "Password", "register": "Register" },
+  "panel": { "dashboard": "Dashboard", "calculation": "Carbon Calculation" },
+  "admin": { "dashboard": "Admin Panel" },
+  "common": { "demo": "Get Free Demo", "inspect": "Explore Platform", "save": "Save", "send": "Send" }
+}
