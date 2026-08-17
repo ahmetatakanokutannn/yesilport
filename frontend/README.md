@@ -38,13 +38,15 @@ Eğitim içerikleri `src/data/courses.ts` dosyasından beslenir. Yeni ders ekler
 
 ## GitHub Pages Deploy
 
-`vite.config.ts` içindeki `base` değeri GitHub repo adıyla eşleşmelidir:
+Site `yesilport.com` özel alan adının kökünden yayınlandığı için
+`vite.config.ts` içindeki `base` değeri `/` olmalıdır:
 
 ```ts
-base: "/yesilport/"
+base: "/"
 ```
 
-Repo adı farklıysa bu değeri `/<repo-adi>/` olarak değiştirin.
+`public/CNAME` dosyası build sırasında `dist/CNAME` olarak kopyalanır ve GitHub
+Pages yayınının `yesilport.com` alan adına bağlı kalmasını sağlar.
 
 Yayınlamak için:
 
