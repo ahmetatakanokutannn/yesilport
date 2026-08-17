@@ -24,17 +24,14 @@ copy .env.example .env
 npm run dev
 ```
 
-Seed demo data after PostgreSQL is running:
+Seed demo data after PostgreSQL is running. First set `SEED_ADMIN_EMAIL`,
+`SEED_DEMO_EMAIL`, and `SEED_DEMO_PASSWORD` in `backend/.env`; do not commit
+real credentials:
 
 ```bash
 cd backend
 npm run seed
 ```
-
-Demo credentials after seed:
-
-- Admin: `admin@yesilport.com`
-- Demo password: `Yesilport2026!`
 
 ## Docker
 

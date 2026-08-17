@@ -6,15 +6,21 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const db_1 = require("./db");
 async function seed() {
+    const adminEmail = process.env.SEED_ADMIN_EMAIL;
+    const demoEmail = process.env.SEED_DEMO_EMAIL;
+    const seedPassword = process.env.SEED_DEMO_PASSWORD;
+    if (!adminEmail || !demoEmail || !seedPassword) {
+        throw new Error("SEED_ADMIN_EMAIL, SEED_DEMO_EMAIL and SEED_DEMO_PASSWORD must be set before seeding.");
+    }
     await (0, db_1.migrate)();
-    const password = await bcryptjs_1.default.hash("Yesilport2026!", 12);
+    const password = await bcryptjs_1.default.hash(seedPassword, 12);
     const admin = await db_1.pool.query(`INSERT INTO users (first_name,last_name,email,password_hash,phone,company_name,company_type,transport_types,role,email_verified,subscription_status,qa_credits)
-     VALUES ('Ozan','Evren','admin@yesilport.com',$1,'0216 578 38 34','Yeditepe TTO A.S.','CONSULTING',ARRAY['ROAD','SEA'],'ROLE_ADMIN',TRUE,'CORPORATE',99)
+     VALUES ('Ozan','Evren',$1,$2,'0216 578 38 34','Yeditepe TTO A.S.','CONSULTING',ARRAY['ROAD','SEA'],'ROLE_ADMIN',TRUE,'CORPORATE',99)
      ON CONFLICT (email) DO UPDATE SET role='ROLE_ADMIN'
-     RETURNING id`, [password]);
+     RETURNING id`, [adminEmail, password]);
     await db_1.pool.query(`INSERT INTO users (first_name,last_name,email,password_hash,company_name,company_type,transport_types,role,email_verified,subscription_status,qa_credits)
-     VALUES ('Demo','Kullanici','demo@yesilport.com',$1,'Pilot Firma A','LOGISTICS',ARRAY['ROAD','RAIL'],'ROLE_PREMIUM',TRUE,'PROFESSIONAL',8)
-     ON CONFLICT (email) DO NOTHING`, [password]);
+     VALUES ('Demo','Kullanici',$1,$2,'Pilot Firma A','LOGISTICS',ARRAY['ROAD','RAIL'],'ROLE_PREMIUM',TRUE,'PROFESSIONAL',8)
+     ON CONFLICT (email) DO NOTHING`, [demoEmail, password]);
     const courses = [
         ["CBAM'i Anlamak", "CBAM, SKDM ve AB ihracat risklerini pratik örneklerle öğrenin.", "Mevzuat", 4, 2.5, "FREE"],
         ["Karbon Ayak İzi Hesaplama Temelleri", "GLEC temelli lojistik emisyon hesaplama eğitimi.", "Hesaplama", 6, 3, "FREE"],
@@ -66,7 +72,7 @@ async function seed() {
     }
 }
 seed()
-    .then(() => console.log("Seed tamamlandı. Admin: admin@yesilport.com / Yesilport2026!"))
+    .then(() => console.log("Seed tamamlandı."))
     .catch((err) => {
     console.error(err);
     process.exitCode = 1;

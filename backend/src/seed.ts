@@ -2,20 +2,30 @@ import bcrypt from "bcryptjs";
 import { migrate, pool } from "./db";
 
 async function seed(): Promise<void> {
+  const adminEmail = process.env.SEED_ADMIN_EMAIL;
+  const demoEmail = process.env.SEED_DEMO_EMAIL;
+  const seedPassword = process.env.SEED_DEMO_PASSWORD;
+
+  if (!adminEmail || !demoEmail || !seedPassword) {
+    throw new Error(
+      "SEED_ADMIN_EMAIL, SEED_DEMO_EMAIL and SEED_DEMO_PASSWORD must be set before seeding."
+    );
+  }
+
   await migrate();
-  const password = await bcrypt.hash("Yesilport2026!", 12);
+  const password = await bcrypt.hash(seedPassword, 12);
   const admin = await pool.query(
     `INSERT INTO users (first_name,last_name,email,password_hash,phone,company_name,company_type,transport_types,role,email_verified,subscription_status,qa_credits)
-     VALUES ('Ozan','Evren','admin@yesilport.com',$1,'0216 578 38 34','Yeditepe TTO A.S.','CONSULTING',ARRAY['ROAD','SEA'],'ROLE_ADMIN',TRUE,'CORPORATE',99)
+     VALUES ('Ozan','Evren',$1,$2,'0216 578 38 34','Yeditepe TTO A.S.','CONSULTING',ARRAY['ROAD','SEA'],'ROLE_ADMIN',TRUE,'CORPORATE',99)
      ON CONFLICT (email) DO UPDATE SET role='ROLE_ADMIN'
      RETURNING id`,
-    [password]
+    [adminEmail, password]
   );
   await pool.query(
     `INSERT INTO users (first_name,last_name,email,password_hash,company_name,company_type,transport_types,role,email_verified,subscription_status,qa_credits)
-     VALUES ('Demo','Kullanici','demo@yesilport.com',$1,'Pilot Firma A','LOGISTICS',ARRAY['ROAD','RAIL'],'ROLE_PREMIUM',TRUE,'PROFESSIONAL',8)
+     VALUES ('Demo','Kullanici',$1,$2,'Pilot Firma A','LOGISTICS',ARRAY['ROAD','RAIL'],'ROLE_PREMIUM',TRUE,'PROFESSIONAL',8)
      ON CONFLICT (email) DO NOTHING`,
-    [password]
+    [demoEmail, password]
   );
 
   const courses = [
@@ -78,7 +88,7 @@ async function seed(): Promise<void> {
 }
 
 seed()
-  .then(() => console.log("Seed tamamlandı. Admin: admin@yesilport.com / Yesilport2026!"))
+  .then(() => console.log("Seed tamamlandı."))
   .catch((err: unknown) => {
     console.error(err);
     process.exitCode = 1;
