@@ -1,23 +1,32 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent, InputHTMLAttributes } from "react";
-import { Link, NavLink, Outlet, Route, Routes, useParams } from "react-router-dom";
-import { HashRouter } from "react-router-dom";
+import { HashRouter, Link, Navigate, NavLink, Outlet, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
-import { useTranslation } from "react-i18next";
 import {
-  Anchor, ArrowDown, BarChart2, Briefcase, Calculator, CheckCircle2, ChevronRight,
-  Download, FileText, GraduationCap, Languages, Leaf, Mail, Menu, MessageCircle, Phone,
+  ArrowDown, BarChart2, Briefcase, Calculator, CheckCircle2, ChevronDown, ChevronRight,
+  Download, FileText, GraduationCap, Leaf, Mail, Menu, MessageCircle, Phone,
   Search, ShieldCheck, Sparkles, Upload, Users, X, Zap
 } from "lucide-react";
 import { courses } from "./data/courses";
+import type { Course } from "./data/courses";
+import logo from "./assets/brand/logo.svg";
+import ozanEvrenPhoto from "./assets/team/ozan-evren.jpg";
+
+const DEFAULT_TITLE = "YeşilPORT | Yeşil Lojistik Portalı";
 
 type Icon = typeof Leaf;
 type Post = { title: string; slug: string; category: string; date: string; excerpt: string };
+type NavItem = { to: string; label: string; children?: { to: string; label: string }[] };
 
-const publicNav = [
-  ["/", "Anasayfa"], ["/platform", "Platform"], ["/mevzuat", "Mevzuat"], ["/hizmetler", "Hizmetler"],
-  ["/sektor", "Sektör"], ["/egitimler", "Eğitimler"], ["/blog", "Blog"], ["/hakkimizda", "Hakkımızda"], ["/iletisim", "İletişim"]
+const publicNav: NavItem[] = [
+  { to: "/", label: "Anasayfa" }, { to: "/platform", label: "Platform" }, { to: "/mevzuat", label: "Mevzuat" },
+  { to: "/hizmetler", label: "Hizmetler" }, { to: "/sektor", label: "Sektör" }, { to: "/egitimler", label: "Eğitimler" },
+  { to: "/blog", label: "Blog" }, { to: "/sss", label: "Sıkça Sorulan Sorular" },
+  { to: "/faaliyetlerimiz", label: "Faaliyetlerimiz", children: [{ to: "/faaliyetlerimiz/calismalarimiz", label: "Çalışmalarımız" }, { to: "/faaliyetlerimiz/raporlarimiz", label: "Raporlarımız" }] },
+  { to: "/hakkimizda", label: "Hakkımızda" }, { to: "/iletisim", label: "İletişim" }
 ];
+
+const faqs = ["YeşilPORT'u kimler kullanabilir?", "Karbon hesaplama sonuçları ne kadar doğru?", "CBAM beyanı için YeşilPORT yeterli mi?", "Yeşil Lojistik Belgesi başvurusunda nasıl yardımcı oluyorsunuz?", "Üyelik ücretleri nelerdir?", "Demo süresi ne kadar sürer?", "Verilerim güvende mi?", "API entegrasyonu nasıl çalışır?", "Soru-cevap kredileri ne zaman yenilenir?", "İptal politikanız nedir?"];
 
 const posts: Post[] = [
   { title: "CBAM 2026 Tam Uygulamaya Geçiyor: Lojistik Firmaları Ne Yapmalı?", slug: "cbam-2026-lojistik-firmalari", category: "Mevzuat", date: "2026-01-15", excerpt: "AB ihracatı yapan lojistik firmaları için veri toplama, raporlama ve maliyet hazırlığı." },
@@ -37,19 +46,20 @@ const reports = [
 ];
 
 function App() {
-  const user = null;
-  const checked = true;
-  void user;
-
-  if (!checked) return <div className="min-h-screen grid place-items-center text-emerald-700 font-bold">YeşilPORT yükleniyor...</div>;
-
   return (
     <HashRouter>
+      <ScrollToTop />
       <Toaster position="top-right" />
       <Routes>
         <Route element={<PublicLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/platform" element={<PlatformPage />} />
+          <Route path="/karbon-hesaplama" element={<CarbonCalculatorPage />} />
+          <Route path="/sss" element={<FaqPage />} />
+          <Route path="/faaliyetlerimiz" element={<Navigate to="/faaliyetlerimiz/calismalarimiz" replace />} />
+          <Route path="/faaliyetlerimiz/calismalarimiz" element={<ActivitiesPage title="Çalışmalarımız" />} />
+          <Route path="/faaliyetlerimiz/raporlarimiz" element={<ActivitiesPage title="Raporlarımız" />} />
+          <Route path="/arama" element={<SearchPage />} />
           <Route path="/mevzuat" element={<RegulationsPage />} />
           <Route path="/hizmetler" element={<ServicesPage />} />
           <Route path="/sektor" element={<SectorPage />} />
@@ -62,37 +72,63 @@ function App() {
           <Route path="/gizlilik" element={<LegalPage title="Gizlilik Politikası" />} />
           <Route path="/kvkk" element={<LegalPage title="KVKK Aydınlatma Metni" />} />
           <Route path="/cerezler" element={<LegalPage title="Çerez Politikası" />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
     </HashRouter>
   );
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo({ top: 0, left: 0, behavior: "instant" }); }, [pathname]);
+  return null;
+}
+
+function NotFoundPage({ title = "Sayfa bulunamadı", subtitle = "Aradığınız sayfa taşınmış ya da hiç var olmamış olabilir.", backTo = "/", backLabel = "Anasayfaya Dön" }: { title?: string; subtitle?: string; backTo?: string; backLabel?: string }) {
+  return <><section className="section"><div className="container"><HeaderBlock eyebrow="404" title={title} subtitle={subtitle} /><Link className="btn btn-primary" to={backTo}>{backLabel}</Link></div></section><Footer /></>;
+}
+
+const navClass = ({ isActive }: { isActive: boolean }) => `nav-link ${isActive ? "active" : ""}`;
+
+function SearchBox({ className = "", onDone, defaultValue }: { className?: string; onDone?: () => void; defaultValue?: string }) {
+  const navigate = useNavigate();
+  const submit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const q = String(new FormData(e.currentTarget).get("q") ?? "").trim();
+    navigate(q ? `/arama?q=${encodeURIComponent(q)}` : "/arama");
+    onDone?.();
+  };
+  return <form role="search" onSubmit={submit} className={`items-center h-11 rounded-full border border-slate-300 bg-white pl-4 pr-1 focus-within:border-emerald-600 ${className}`}><input name="q" type="search" defaultValue={defaultValue} aria-label="Sitede ara" className="w-full min-w-0 bg-transparent outline-none text-sm" /><span className="w-px h-6 bg-slate-300 mx-1" /><button type="submit" aria-label="Ara" className="grid place-items-center w-9 h-9 rounded-full text-slate-500 hover:text-emerald-700"><Search size={20} /></button></form>;
+}
+
 function PublicLayout() {
   const [open, setOpen] = useState(false);
-  const { i18n } = useTranslation();
-  const nav = (
-    <>
-      {publicNav.map(([to, label]) => <NavLink key={to} to={to} onClick={() => setOpen(false)} className={({ isActive }) => `text-sm font-bold ${isActive ? "text-emerald-700" : "text-slate-700 hover:text-emerald-700"}`}>{label}</NavLink>)}
-    </>
-  );
+  const close = () => setOpen(false);
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white/86 backdrop-blur border-b border-slate-200">
-        <div className="container h-20 flex items-center justify-between gap-4">
-          <Link to="/" className="flex items-center gap-3 font-black text-xl" aria-label="YeşilPORT anasayfa">
-            <span className="relative grid place-items-center w-11 h-11 rounded-full bg-emerald-100 text-emerald-700"><Anchor size={24} /><Leaf size={17} className="absolute -right-1 -top-1" /></span>
-            <span>Yeşil <b>PORT</b></span>
-          </Link>
-          <nav className="hide-mobile flex items-center gap-5">{nav}</nav>
-          <div className="hide-mobile flex items-center gap-2">
-            <button className="btn btn-outline px-3" aria-label="Dil değiştir" onClick={() => i18n.changeLanguage(i18n.language === "tr" ? "en" : "tr")}><Languages size={18} /> {i18n.language.toUpperCase()}</button>
-            <Link className="btn btn-primary" to="/iletisim">Demo Al</Link>
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200">
+        <div className="mx-auto max-w-[1880px] px-4 md:px-8 h-20 flex items-center gap-4">
+          <Link to="/" className="shrink-0" aria-label="YeşilPORT anasayfa"><img src={logo} alt="YeşilPORT" className="h-9 md:h-10 w-auto" /></Link>
+          <nav className="hidden min-[1600px]:flex items-center gap-3.5 ml-3" aria-label="Ana menü">
+            {publicNav.map((item) => item.children
+              ? <div className="nav-group relative flex" key={item.to}><NavLink to={item.to} className={navClass}>{item.label}</NavLink><div className="nav-dropdown"><div className="card p-6 grid gap-3 min-w-56">{item.children.map((c) => <NavLink key={c.to} to={c.to} className={({ isActive }) => `nav-dropdown-item ${isActive ? "active" : ""}`}>{c.label}</NavLink>)}</div></div></div>
+              : <NavLink key={item.to} to={item.to} end={item.to === "/"} className={navClass}>{item.label}</NavLink>)}
+          </nav>
+          <div className="ml-auto flex items-center gap-2.5">
+            <SearchBox className="hidden min-[1800px]:flex w-56" />
+            <Link to="/arama" aria-label="Ara" className="hidden min-[1600px]:grid min-[1800px]:hidden place-items-center w-11 h-11 rounded-full border border-slate-300 text-slate-500 hover:text-emerald-700"><Search size={20} /></Link>
+            {/* .btn sets display outside Tailwind's layers, so visibility is toggled on wrappers */}
+            <div className="hidden sm:flex"><Link className="btn btn-primary btn-header" to="/iletisim">Demo Al</Link></div>
+            <div className="hidden md:flex"><NavLink className={({ isActive }) => `btn btn-primary btn-header ${isActive ? "is-active" : ""}`} to="/karbon-hesaplama">Karbon Hesaplama<br />Motoru</NavLink></div>
+            <span className="hidden min-[1600px]:inline-grid place-items-center h-9 px-4 rounded-full border-2 border-emerald-500 font-black text-sm" title="Türkçe">TR</span>
+            <button className="min-[1600px]:hidden p-2" aria-label="Menüyü aç" onClick={() => setOpen(true)}><Menu /></button>
           </div>
-          <button className="md:hidden p-2" aria-label="Menü" onClick={() => setOpen(true)}><Menu /></button>
         </div>
       </header>
-      {open && <div className="fixed inset-0 z-50 bg-black/40" onClick={() => setOpen(false)}><aside className="ml-auto h-full w-80 max-w-[86vw] bg-white p-6 flex flex-col gap-5" onClick={(e) => e.stopPropagation()}><button className="self-end" onClick={() => setOpen(false)} aria-label="Kapat"><X /></button>{nav}<Link className="btn btn-primary" to="/iletisim" onClick={() => setOpen(false)}>Demo Al</Link></aside></div>}
+      {open && <div className="fixed inset-0 z-50 bg-black/40" onClick={close}><aside className="ml-auto h-full w-80 max-w-[86vw] bg-white p-6 flex flex-col gap-4 overflow-y-auto" onClick={(e) => e.stopPropagation()}><button className="self-end" onClick={close} aria-label="Kapat"><X /></button><SearchBox className="flex" onDone={close} />
+        {publicNav.map((item) => <div key={item.to} className="grid gap-3"><NavLink to={item.children ? item.children[0].to : item.to} end={item.to === "/"} onClick={close} className={navClass}>{item.label}{item.children && <ChevronDown className="inline ml-1" size={14} />}</NavLink>{item.children?.map((c) => <NavLink key={c.to} to={c.to} onClick={close} className={({ isActive }) => `pl-4 text-sm font-bold ${isActive ? "text-emerald-700" : "text-slate-600"}`}>{c.label}</NavLink>)}</div>)}
+        <Link className="btn btn-primary btn-header" to="/iletisim" onClick={close}>Demo Al</Link><NavLink className={({ isActive }) => `btn btn-primary btn-header ${isActive ? "is-active" : ""}`} to="/karbon-hesaplama" onClick={close}>Karbon Hesaplama Motoru</NavLink></aside></div>}
       <main><Outlet /></main>
     </>
   );
@@ -102,8 +138,19 @@ function HeaderBlock({ eyebrow, title, subtitle }: { eyebrow?: string; title: st
   return <div className="max-w-3xl mb-10 fade-up">{eyebrow && <span className="pill bg-emerald-50 text-emerald-700">{eyebrow}</span>}<h1 className="text-4xl md:text-6xl font-black tracking-normal mt-4">{title}</h1>{subtitle && <p className="text-lg text-slate-600 mt-4 leading-8">{subtitle}</p>}</div>;
 }
 
+const footerColumns: [string, [string, string][]][] = [
+  ["Hızlı Linkler", publicNav.slice(1, 5).map(({ to, label }) => [to, label])],
+  ["Hizmetler", [["/platform", "Karbon Hesaplama"], ["/platform", "Uyum Skoru"], ["/hizmetler", "Mentörlük"], ["/egitimler", "Eğitimler"]]],
+  ["İletişim", [["mailto:info@yesilport.com", "info@yesilport.com"], ["tel:+902165783834", "0216 578 38 34"], ["/iletisim", "Teknopark İstanbul"]]]
+];
+
+function FooterLink({ to, label }: { to: string; label: string }) {
+  const className = "hover:text-white transition";
+  return to.startsWith("/") ? <Link className={className} to={to}>{label}</Link> : <a className={className} href={to}>{label}</a>;
+}
+
 function Footer() {
-  return <footer className="bg-slate-950 text-white pt-14 pb-8"><div className="container grid md:grid-cols-4 gap-8"><div><div className="flex items-center gap-3 font-black text-xl"><Leaf /> Yeşil <b>PORT</b></div><p className="text-slate-300 mt-4">Yeditepe Üniversitesi TTO A.Ş. tarafından geliştirilen yeşil lojistik portalı.</p></div>{["Hızlı Linkler", "Hizmetler", "İletişim"].map((h, i) => <div key={h}><h3 className="font-black mb-4">{h}</h3><div className="grid gap-2 text-slate-300">{(i === 0 ? publicNav.slice(1, 5).map((x) => x[1]) : i === 1 ? ["Karbon Hesaplama", "Uyum Skoru", "Mentörlük", "Eğitimler"] : ["info@yesilport.com", "0216 578 38 34", "Teknopark İstanbul"]).map((x) => <span key={x}>{x}</span>)}</div></div>)}</div><div className="container border-t border-white/10 mt-10 pt-6 flex flex-wrap gap-4 justify-between text-sm text-slate-400"><span>© 2026 YeşilPORT | Yeditepe TTO A.Ş. | Teknopark İstanbul</span><span>KVKK | Gizlilik | Çerezler</span></div></footer>;
+  return <footer className="bg-slate-950 text-white pt-14 pb-8"><div className="container grid md:grid-cols-4 gap-8"><div><img src={logo} alt="YeşilPORT" className="h-9 w-auto brightness-0 invert" /><p className="text-slate-300 mt-4">Yeditepe Üniversitesi TTO A.Ş. tarafından geliştirilen yeşil lojistik portalı.</p></div>{footerColumns.map(([heading, links]) => <div key={heading}><h3 className="font-black mb-4">{heading}</h3><div className="grid gap-2 text-slate-300 justify-items-start">{links.map(([to, label]) => <FooterLink key={label} to={to} label={label} />)}</div></div>)}</div><div className="container border-t border-white/10 mt-10 pt-6 flex flex-wrap gap-4 justify-between text-sm text-slate-400"><span>© 2026 YeşilPORT | Yeditepe TTO A.Ş. | Teknopark İstanbul</span><span className="flex gap-3"><FooterLink to="/kvkk" label="KVKK" /><FooterLink to="/gizlilik" label="Gizlilik" /><FooterLink to="/cerezler" label="Çerezler" /></span></div></footer>;
 }
 
 function HomePage() {
@@ -133,8 +180,16 @@ function DemoCta() {
   return <section className="section bg-emerald-700 text-white"><div className="container grid lg:grid-cols-2 gap-10 items-center"><div><h2 className="text-4xl font-black">Platformu Ücretsiz Deneyin - 14 Gün Limitsiz Erişim</h2><p className="text-emerald-50 mt-4 leading-8">Demo talebinizi bırakın, YeşilPORT ekibi firmanız için hesaplama senaryosu hazırlasın.</p><MiniForm compact /></div><DashboardMock /></div></section>;
 }
 
+function PlatformHero() {
+  return <section className="section section-muted"><div className="container grid lg:grid-cols-2 gap-10 items-center"><HeaderBlock eyebrow="Dijital Çözüm" title="YeşilPORT Platformu" subtitle="Lojistik operasyonlarınızı yeşil dönüşüm hedefleriyle uyumlu hale getiren kapsamlı dijital çözüm." /><DashboardMock /></div></section>;
+}
+
 function PlatformPage() {
-  return <><section className="section section-muted"><div className="container grid lg:grid-cols-2 gap-10 items-center"><HeaderBlock eyebrow="Dijital Çözüm" title="YeşilPORT Platformu" subtitle="Lojistik operasyonlarınızı yeşil dönüşüm hedefleriyle uyumlu hale getiren kapsamlı dijital çözüm." /><DashboardMock /></div></section><CalculatorDemo /><ComplianceDemo /><ScenariosSection /><CertificateGuide /><TechStack /><Footer /></>;
+  return <><PlatformHero /><CalculatorDemo /><ComplianceDemo /><ScenariosSection /><CertificateGuide /><TechStack /><Footer /></>;
+}
+
+function CarbonCalculatorPage() {
+  return <><PlatformHero /><CalculatorDemo /><Footer /></>;
 }
 
 function CalculatorDemo({ panel = false }: { panel?: boolean }) {
@@ -213,9 +268,39 @@ function Downloads() { return <div className="grid md:grid-cols-2 gap-4">{report
 function CaseStudies() { return <div><h2 className="font-black text-2xl mb-5">Vaka Çalışmaları</h2><div className="grid-auto">{["Firma A: Euro 6 filo ile %23 azaltım", "Firma B: 3 ayda CBAM uyumu", "Firma C: Yeşil Lojistik Belgesi aldı"].map((x) => <div className="card p-6" key={x}><p className="font-black">{x}</p><p className="text-slate-600 mt-3">Pilot şirket verileri anonimleştirilmiştir. Operasyonel KPI ve tasarruf etkisi panelden izlenmiştir.</p></div>)}</div></div>; }
 function Research() { return <div><h2 className="font-black text-2xl mb-5">Araştırma Makaleleri</h2><div className="grid-auto">{["Prof.Dr. E. Şule Aydeniz", "Doç.Dr. Ahmet Turan", "Prof.Dr. E. Şule Aydeniz", "Doç.Dr. Ahmet Turan"].map((a, i) => <div className="card p-6" key={`${a}${i}`}><span className="pill bg-emerald-50 text-emerald-700">DOI: 10.2026/yesilport.{i + 1}</span><h3 className="font-black mt-4">Yeşil lojistik dönüşümünde dijital ölçümleme</h3><p className="text-slate-600 mt-2">{a} - Yeditepe Üniversitesi, 2026</p></div>)}</div></div>; }
 
+type TeamMember = { name: string; role: string; bio: string[]; email?: string; photo?: string };
+
+const team: TeamMember[] = [
+  { name: "Dr. Ozan EVREN", role: "Proje Yürütücüsü", bio: ["YÜ TTO Genel Müdür Yardımcısı | AB HORIZON 2020, NATO DIANA projelerinde deneyimli"], photo: ozanEvrenPhoto },
+  { name: "Prof. Dr. E. Şule AYDENİZ", role: "Akademik Danışman", bio: ["Lojistik ve tedarik zinciri yönetimi alanında uzman"] },
+  { name: "Doç. Dr. Ahmet TURAN", role: "Akademik Danışman", bio: ["Yeşil lojistik ve sürdürülebilirlik alanında uzman"] },
+  { name: "Tuğba ÖZTÜRK", role: "Proje Yöneticisi", email: "tugba.ozturk@yeditepe.edu.tr", bio: ["Proje iletişim ve koordinasyon"] },
+  { name: "Erdem TÜRK", role: "Proje Mali Uzmanı", bio: ["Proje bütçesi, mali raporlama ve finansal süreçler"] },
+  { name: "Ekibin Yeni Üyesi", role: "Teknik Uzman", bio: ["Proje teknik altyapı ve operasyonel süreçler"] }
+];
+
+function AvatarPlaceholder() {
+  return <svg viewBox="0 0 80 80" className="w-full h-full" aria-hidden="true"><circle cx="40" cy="31" r="12" fill="#8fb8a2" /><path d="M14 74c0-15 11.6-25 26-25s26 10 26 25z" fill="#8fb8a2" /></svg>;
+}
+
+function TeamCard({ member }: { member: TeamMember }) {
+  return <div className="team-card p-5">
+    <div className="mx-auto w-20 h-20 rounded-full border border-emerald-700 bg-[#eaf3f0] overflow-hidden">{member.photo ? <img src={member.photo} alt={member.name} className="w-full h-full object-cover" loading="lazy" /> : <AvatarPlaceholder />}</div>
+    <h3 className="mt-4 font-bold leading-snug text-black">{member.name}</h3>
+    <p className="italic font-medium text-emerald-700">{member.role}</p>
+    <span className="block w-9 h-0.5 bg-emerald-700 my-2" />
+    {member.email && <a className="block italic font-medium text-[11px] tracking-tight text-[#414242] hover:text-emerald-700 [overflow-wrap:anywhere]" href={`mailto:${member.email}`}>{member.email}</a>}
+    {member.bio.map((line) => <p key={line} className="italic font-medium text-xs leading-5 text-[#414242]">{line}</p>)}
+  </div>;
+}
+
 function AboutPage() {
-  const team = [["Dr. Ozan Evren", "Proje Yürütücüsü", "YÜ TTO Genel Müdür Yardımcısı | AB HORIZON 2020, NATO DIANA projelerinde deneyimli"], ["Prof.Dr. E. Şule Aydeniz", "Akademik Danışman", "Lojistik ve tedarik zinciri yönetimi alanında uzman"], ["Doç.Dr. Ahmet Turan", "Akademik Danışman", "Yeşil lojistik ve sürdürülebilirlik alanında uzman"], ["Tuğba Öztürk", "Proje Yöneticisi", "tugbaozturk@yeditepe.edu.tr | Proje iletişim ve koordinasyon"], ["Erdem Türk", "Proje Mali Uzmanı", "Proje bütçesi, mali raporlama ve finansal süreçler"]];
-  return <><section className="section section-muted"><div className="container"><HeaderBlock title="Yeditepe Üniversitesi Teknoloji Transfer Ofisi A.Ş." subtitle="İnönü Mah. Kayışdağı Cad. Yeditepe Üniversitesi, Ataşehir/İstanbul | 0216 578 38 34 | info@yeditepetto.com | 2018" /><p className="card p-6 font-bold">Teknopark İstanbul yerleşkesinde AR-GE faaliyetleri yürütmekteyiz.</p></div></section><section className="section"><div className="container"><h2 className="text-3xl font-black mb-6">Proje Ekibi</h2><div className="grid-auto">{team.map(([n, r, b]) => <div className="card p-6" key={n}><img className="w-24 h-24 rounded-full object-cover mb-4" alt="" src={`https://images.unsplash.com/photo-${n.includes("Şule") ? "1494790108377-be9c29b29330" : n.includes("Tuğba") ? "1534528741775-53994a69daeb" : "1500648767791-00dcc994a43e"}?auto=format&fit=crop&w=200&q=80`} /><h3 className="font-black text-xl">{n}</h3><p className="text-emerald-700 font-bold">{r}</p><p className="text-slate-600 mt-3">{b}</p></div>)}</div><LogoMarquee /><Milestones /><a className="btn btn-primary" href="#"><Download size={18} /> Basın ve Medya Kiti İndir</a></div></section><Footer /></>;
+  return <><section className="section"><div className="container max-w-[1080px]">
+    <h1 className="text-3xl font-bold text-emerald-700 fade-up">Hakkımızda</h1>
+    <p className="mt-3 leading-7 text-slate-900">YeşilPORT, <b>Yeditepe Üniversitesi Teknoloji Transfer Ofisi A.Ş.</b> bünyesinde, denizcilik ve liman sektörlerine yönelik yenilikçi ve sürdürülebilir çözümler geliştirmek amacıyla faaliyet göstermektedir. <b>2018 yılında kurulan şirketimiz, Teknopark İstanbul’da AR-GE faaliyetleri</b> yürüterek teknoloji, çevre ve sektörel deneyimi bir araya getirmektedir. Sürdürülebilir, verimli ve çevre odaklı çözümlerle geleceğe değer katıyoruz.</p>
+    <h2 className="mt-10 text-3xl font-bold text-emerald-700">Proje Ekibi</h2>
+    <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">{team.map((m) => <TeamCard key={m.name} member={m} />)}</div>
+  </div></section><LogoMarquee /><section className="section"><div className="container"><Milestones /><a className="btn btn-primary" href="#"><Download size={18} /> Basın ve Medya Kiti İndir</a></div></section><Footer /></>;
 }
 
 function Milestones() { return <div className="my-10 grid md:grid-cols-6 gap-3">{["2018 TTO kuruluş", "2021-2023 İSTKA IDec-TT", "Eylül 2025 TÜBİTAK 3005", "Aralık 2025 Teknopark başvuru", "2026 Q1 MVP lansmanı", "2027 100+ aktif firma"].map((m) => <div className="card p-4 font-bold" key={m}>{m}</div>)}</div>; }
@@ -226,35 +311,83 @@ function BlogPage() {
 
 function BlogDetailPage() {
   const { slug } = useParams();
-  const post = posts.find((p) => p.slug === slug) ?? posts[0];
-  useEffect(() => { document.title = `${post.title} | YeşilPORT`; }, [post.title]);
+  const post = posts.find((p) => p.slug === slug);
+  useEffect(() => {
+    if (!post) return;
+    document.title = `${post.title} | YeşilPORT`;
+    return () => { document.title = DEFAULT_TITLE; };
+  }, [post]);
+  if (!post) return <NotFoundPage title="Yazı bulunamadı" subtitle="Bu yazı kaldırılmış ya da bağlantı hatalı olabilir." backTo="/blog" backLabel="Bloga Dön" />;
   return <><section className="section"><article className="container max-w-3xl"><span className="pill bg-emerald-50 text-emerald-700">{post.category} | {post.date}</span><h1 className="text-4xl md:text-6xl font-black mt-5">{post.title}</h1><p className="text-xl text-slate-600 mt-5 leading-9">{post.excerpt}</p><img className="rounded-2xl my-8 w-full aspect-video object-cover" alt="" src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1400&q=80" /><p className="leading-8 text-slate-700">YeşilPORT uzmanları bu analizde veri toplama, taşıma bazlı karbon hesabı, tedarikçi uyumu, raporlama ve yönetim kurulu seviyesinde karar destek adımlarını özetler. SEO anahtar kelimeleri: CBAM, CSRD, karbon ayak izi, yeşil lojistik.</p></article></section><Footer /></>;
 }
 
+const levelLabel: Record<Course["level"], string> = { FREE: "Ücretsiz" };
+
+function CourseCard({ course }: { course: Course }) {
+  return <Link to={`/egitimler/${course.id}`} className="group grid grid-cols-2 min-h-64 bg-white overflow-hidden shadow-[0_10px_24px_rgba(15,23,42,.14)] hover:shadow-[0_16px_32px_rgba(15,23,42,.2)] hover:-translate-y-1 transition">
+    <div className="flex flex-col pt-5">
+      <h3 className="px-3 sm:px-4 font-bold text-base sm:text-lg leading-snug text-black">{course.title}</h3>
+      <div className="mt-auto pt-5">
+        <span className="course-tab text-sm sm:text-base">{levelLabel[course.level]}</span>
+        <div className="bg-emerald-700 text-white italic font-medium text-[11px] tracking-tight leading-5 px-3 sm:px-4 py-1.5"><div>{course.instructor}</div><div>{course.lessons[0]?.duration ?? "Süre belirtilmedi"} | {course.lessons.length} ders</div></div>
+        <span className="flex items-center justify-end gap-0.5 px-3 sm:px-4 py-2.5 font-bold text-emerald-700 group-hover:text-emerald-500">Derse Git <ChevronRight size={16} /></span>
+      </div>
+    </div>
+    <div className="relative bg-gradient-to-br from-emerald-700 to-[#0e4668]">{course.image ? <img src={course.image} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" /> : <GraduationCap aria-hidden="true" className="absolute inset-0 m-auto text-white/35" size={64} />}</div>
+  </Link>;
+}
+
 function CoursesPage() {
-  return <><section className="section section-muted"><div className="container"><HeaderBlock title="Eğitimler" subtitle="CBAM, CSRD ve yeşil lojistik süreçleri için Google Drive videolarıyla beslenen statik dersler." /><div className="grid-auto">{courses.map((course) => <Link to={`/egitimler/${course.id}`} className="card p-6 hover:shadow-xl hover:-translate-y-1 transition" key={course.id}><div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 grid place-items-center mb-5"><GraduationCap size={28} /></div><span className="pill bg-emerald-50 text-emerald-700">{course.level}</span><h3 className="font-black text-xl mt-4">{course.title}</h3><p className="text-slate-600 mt-3">{course.instructor}</p><p className="text-sm text-slate-500 font-bold mt-5">{course.lessons[0]?.duration ?? "Süre belirtilmedi"} | {course.lessons.length} ders</p><span className="inline-flex items-center gap-1 text-emerald-700 font-black mt-5">Derse Git <ChevronRight size={18} /></span></Link>)}</div></div></section><Footer /></>;
+  return <><section className="section section-muted"><div className="container"><HeaderBlock title="Eğitimler" subtitle="CBAM, CSRD ve yeşil lojistik süreçleri için Google Drive videolarıyla beslenen statik dersler." /></div><div className="mx-auto w-[min(1600px,calc(100%-24px))] bg-white shadow-[0_10px_30px_rgba(15,23,42,.08)] p-4 sm:p-8 lg:p-12"><div className="grid gap-6 lg:gap-x-5 lg:gap-y-12 lg:grid-cols-2 xl:grid-cols-3">{courses.map((course) => <CourseCard key={course.id} course={course} />)}</div></div></section><Footer /></>;
 }
 
 function CourseDetailPage() {
   const { courseId } = useParams();
-  const course = courses.find((item) => item.id === courseId) ?? courses[0];
+  const course = courses.find((item) => item.id === courseId);
+  if (!course) return <NotFoundPage title="Eğitim bulunamadı" subtitle="Bu eğitim kaldırılmış ya da bağlantı hatalı olabilir." backTo="/egitimler" backLabel="Eğitimlere Dön" />;
+  // key resets the selected lesson whenever the course changes
+  return <CourseDetail key={course.id} course={course} />;
+}
+
+function CourseDetail({ course }: { course: Course }) {
   const [activeLessonId, setActiveLessonId] = useState(course.lessons[0]?.id ?? "");
   const activeLesson = course.lessons.find((lesson) => lesson.id === activeLessonId) ?? course.lessons[0];
-
-  useEffect(() => {
-    setActiveLessonId(course.lessons[0]?.id ?? "");
-  }, [course.id, course.lessons]);
 
   if (!activeLesson) {
     return <><section className="section"><div className="container"><HeaderBlock title="Ders bulunamadı" subtitle="Bu kurs için henüz ders eklenmemiş." /><Link className="btn btn-primary" to="/egitimler">Eğitimlere Dön</Link></div></section><Footer /></>;
   }
 
-  return <><section className="section section-muted"><div className="container"><HeaderBlock eyebrow={course.level} title={course.title} subtitle={course.instructor} /><div className="grid lg:grid-cols-[1fr_320px] gap-6 items-start"><div className="card p-5"><iframe src={activeLesson.videoUrl} className="w-full aspect-video rounded-2xl" allow="autoplay" allowFullScreen title={activeLesson.title} /><h2 className="font-black text-2xl mt-6">{activeLesson.title}</h2>{activeLesson.duration && <p className="text-slate-600 mt-2">{activeLesson.duration}</p>}</div><aside className="card p-5"><h3 className="font-black text-xl mb-4">Dersler</h3><div className="grid gap-2">{course.lessons.map((lesson) => <button key={lesson.id} type="button" onClick={() => setActiveLessonId(lesson.id)} className={`text-left rounded-xl border p-4 font-bold transition ${lesson.id === activeLesson.id ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 hover:border-emerald-300"}`}><span>{lesson.title}</span>{lesson.duration && <span className="block text-sm text-slate-500 mt-1">{lesson.duration}</span>}</button>)}</div></aside></div></div></section><Footer /></>;
+  return <><section className="section section-muted"><div className="container"><HeaderBlock eyebrow={levelLabel[course.level]} title={course.title} subtitle={course.instructor} /><div className="grid lg:grid-cols-[1fr_320px] gap-6 items-start"><div className="card p-5"><iframe src={activeLesson.videoUrl} className="w-full aspect-video rounded-2xl" allow="autoplay" allowFullScreen title={activeLesson.title} /><h2 className="font-black text-2xl mt-6">{activeLesson.title}</h2>{activeLesson.duration && <p className="text-slate-600 mt-2">{activeLesson.duration}</p>}</div><aside className="card p-5"><h3 className="font-black text-xl mb-4">Dersler</h3><div className="grid gap-2">{course.lessons.map((lesson) => <button key={lesson.id} type="button" onClick={() => setActiveLessonId(lesson.id)} className={`text-left rounded-xl border p-4 font-bold transition ${lesson.id === activeLesson.id ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 hover:border-emerald-300"}`}><span>{lesson.title}</span>{lesson.duration && <span className="block text-sm text-slate-500 mt-1">{lesson.duration}</span>}</button>)}</div></aside></div></div></section><Footer /></>;
 }
 
 function ContactPage() {
-  const faqs = ["YeşilPORT'u kimler kullanabilir?", "Karbon hesaplama sonuçları ne kadar doğru?", "CBAM beyanı için YeşilPORT yeterli mi?", "Yeşil Lojistik Belgesi başvurusunda nasıl yardımcı oluyorsunuz?", "Üyelik ücretleri nelerdir?", "Demo süresi ne kadar sürer?", "Verilerim güvende mi?", "API entegrasyonu nasıl çalışır?", "Soru-cevap kredileri ne zaman yenilenir?", "İptal politikanız nedir?"];
-  return <><section className="section section-muted"><div className="container grid lg:grid-cols-2 gap-8"><div><HeaderBlock title="İletişim" subtitle="Demo talebi, genel iletişim ve medya bağlantıları." /><MiniForm /></div><div className="card p-6"><h2 className="font-black text-2xl">Teknopark İstanbul</h2><p className="text-slate-600 mt-3">Pazartesi-Cuma 09:00-18:00</p><p className="mt-4 flex gap-2"><Mail /> iletisim@yesilport.com</p><p className="mt-2 flex gap-2"><Phone /> 0216 578 38 34</p><div className="mt-6 aspect-video bg-slate-200 rounded-2xl grid place-items-center text-slate-500">Google Maps iframe placeholder</div></div></div></section><section className="section"><div className="container"><h2 className="text-3xl font-black mb-6">Sık Sorulan Sorular</h2><div className="grid gap-3">{faqs.map((q, i) => <details className="card p-5" key={q}><summary className="font-black cursor-pointer">{q}</summary><p className="text-slate-600 mt-3">YeşilPORT ekibi bu konuda demo görüşmesinde firmanıza özel yanıt verir. Soru {i + 1} için standart süreç panelden takip edilir.</p></details>)}</div><p className="mt-8 font-bold">Basın ve medya iletişimi için: iletisim@yesilport.com</p><div className="flex gap-3 mt-4"><Link to="/kvkk">KVKK Aydınlatma Metni</Link><Link to="/gizlilik">Gizlilik Politikası</Link><Link to="/cerezler">Çerez Politikası</Link></div></div></section><Footer /></>;
+  return <><section className="section section-muted"><div className="container grid lg:grid-cols-2 gap-8"><div><HeaderBlock title="İletişim" subtitle="Demo talebi, genel iletişim ve medya bağlantıları." /><MiniForm /></div><div className="card p-6"><h2 className="font-black text-2xl">Teknopark İstanbul</h2><p className="text-slate-600 mt-3">Pazartesi-Cuma 09:00-18:00</p><p className="mt-4 flex gap-2"><Mail /> iletisim@yesilport.com</p><p className="mt-2 flex gap-2"><Phone /> 0216 578 38 34</p><div className="mt-6 aspect-video bg-slate-200 rounded-2xl grid place-items-center text-slate-500">Google Maps iframe placeholder</div><Link className="inline-flex items-center gap-1 mt-6 font-black text-emerald-700" to="/sss">Sıkça Sorulan Sorular <ChevronRight size={18} /></Link></div></div></section><Footer /></>;
+}
+
+function FaqPage() {
+  return <><section className="section"><div className="container max-w-[1090px]"><h1 className="text-3xl font-black mb-6 fade-up">Sık Sorulan Sorular</h1><div className="grid gap-3">{faqs.map((q, i) => <details className="card p-5" key={q}><summary className="font-black cursor-pointer">{q}</summary><p className="text-slate-600 mt-3">YeşilPORT ekibi bu konuda demo görüşmesinde firmanıza özel yanıt verir. Soru {i + 1} için standart süreç panelden takip edilir.</p></details>)}</div><p className="mt-8 font-bold">Basın ve medya iletişimi için: <a className="hover:text-emerald-700" href="mailto:iletisim@yesilport.com">iletisim@yesilport.com</a></p><div className="flex flex-wrap gap-3 mt-4 text-slate-700"><Link className="hover:text-emerald-700" to="/kvkk">KVKK Aydınlatma Metni</Link><Link className="hover:text-emerald-700" to="/gizlilik">Gizlilik Politikası</Link><Link className="hover:text-emerald-700" to="/cerezler">Çerez Politikası</Link></div></div></section><Footer /></>;
+}
+
+function ActivitiesPage({ title }: { title: string }) {
+  return <><section className="section"><div className="mx-auto w-[min(1680px,calc(100%-32px))]"><h1 className="text-3xl font-black text-emerald-700 mb-8 fade-up">{title}</h1><div className="grid gap-8 lg:gap-10 sm:grid-cols-2 lg:grid-cols-4">{Array.from({ length: 8 }, (_, i) => <div key={i} className="aspect-[10/7] bg-[#d0e6d2]" aria-hidden="true" />)}</div></div></section><Footer /></>;
+}
+
+type SearchResult = { to: string; title: string; kind: string; text?: string };
+
+const searchIndex: SearchResult[] = [
+  ...publicNav.flatMap((item) => item.children ? item.children.map((c) => ({ to: c.to, title: c.label, kind: "Sayfa" })) : [{ to: item.to, title: item.label, kind: "Sayfa" }]),
+  { to: "/karbon-hesaplama", title: "Karbon Hesaplama Motoru", kind: "Sayfa", text: "GLEC CO2e emisyon hesaplama" },
+  ...courses.map((c) => ({ to: `/egitimler/${c.id}`, title: c.title, kind: "Eğitim", text: c.instructor })),
+  ...posts.map((p) => ({ to: `/blog/${p.slug}`, title: p.title, kind: p.category, text: p.excerpt })),
+  ...faqs.map((q) => ({ to: "/sss", title: q, kind: "SSS" }))
+];
+
+function SearchPage() {
+  const [params] = useSearchParams();
+  const q = (params.get("q") ?? "").trim();
+  const needle = q.toLocaleLowerCase("tr");
+  const results = needle ? searchIndex.filter((r) => `${r.title} ${r.text ?? ""}`.toLocaleLowerCase("tr").includes(needle)) : [];
+  return <><section className="section section-muted"><div className="container max-w-3xl"><HeaderBlock title="Arama" subtitle={q ? `“${q}” için ${results.length} sonuç` : "Sayfalar, eğitimler, blog yazıları ve sık sorulan sorular içinde arayın."} /><SearchBox key={q} defaultValue={q} className="flex w-full" /><div className="grid gap-3 mt-8">{results.map((r) => <Link key={`${r.kind}${r.to}${r.title}`} to={r.to} className="card p-5 hover:border-emerald-500 transition"><span className="pill bg-emerald-50 text-emerald-700">{r.kind}</span><h2 className="font-black text-lg mt-3">{r.title}</h2>{r.text && <p className="text-slate-600 mt-1 text-sm">{r.text}</p>}</Link>)}</div></div></section><Footer /></>;
 }
 
 function MiniForm({ compact, upload }: { compact?: boolean; upload?: boolean }) {
@@ -271,6 +404,6 @@ function ArticleCard({ post, large }: { post: Post; large?: boolean }) { return 
 function Input({ label, ...props }: { label: string } & InputHTMLAttributes<HTMLInputElement>) { return <label className="grid gap-1 text-sm font-bold">{label}<input className="input" required {...props} /></label>; }
 function Select({ label, options, name }: { label: string; options: string[][]; name: string }) { return <label className="grid gap-1 text-sm font-bold">{label}<select className="input" name={name}>{options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>; }
 function LegalPage({ title }: { title: string }) { return <><section className="section"><div className="container max-w-3xl"><HeaderBlock title={title} /><p className="leading-8 text-slate-700">YeşilPORT, KVKK kapsamında kişisel verileri açık rıza, meşru menfaat ve sözleşme gerekliliği çerçevesinde işler. Çerezler performans, güvenlik ve tercih yönetimi için kullanılır.</p></div></section><Footer /></>; }
-function useCountdown(date: string) { const [now, setNow] = useState(Date.now()); useEffect(() => { const id = window.setInterval(() => setNow(Date.now()), 30000); return () => clearInterval(id); }, []); return useMemo(() => { const diff = new Date(date).getTime() - now; const safe = Math.max(0, diff); return { past: diff <= 0, days: Math.floor(safe / 86400000), hours: Math.floor((safe / 3600000) % 24), minutes: Math.floor((safe / 60000) % 60) }; }, [date, now]); }
+function useCountdown(date: string) { const [now, setNow] = useState(() => Date.now()); useEffect(() => { const id = window.setInterval(() => setNow(Date.now()), 30000); return () => clearInterval(id); }, []); return useMemo(() => { const diff = new Date(date).getTime() - now; const safe = Math.max(0, diff); return { past: diff <= 0, days: Math.floor(safe / 86400000), hours: Math.floor((safe / 3600000) % 24), minutes: Math.floor((safe / 60000) % 60) }; }, [date, now]); }
 
 export default App;

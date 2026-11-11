@@ -1,11 +1,28 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,500&family=Roboto:wght@800&display=swap');
 @import "tailwindcss";
 
+/* YeşilPORT brand palette (from yesilport-logo-sunum.pdf):
+   green #347859 (logo "Yeşil", active states), navy #0e4668 (logo "PORT"),
+   action green #4ca154 (buttons). The emerald scale is remapped onto it so
+   every existing emerald-* utility follows the brand. */
 @theme {
-  --color-brand: #16a34a;
-  --color-brand-2: #059669;
-  --color-teal-deep: #0f766e;
+  --color-brand: #347859;
+  --color-brand-navy: #0e4668;
+  --color-brand-action: #4ca154;
+  --color-brand-tint: #d7f9e4;
+  --color-emerald-50: #eef7f1;
+  --color-emerald-100: #dcefe2;
+  --color-emerald-200: #b7dcc2;
+  --color-emerald-300: #8cc59c;
+  --color-emerald-400: #66b277;
+  --color-emerald-500: #4ca154;
+  --color-emerald-600: #3e8a4c;
+  --color-emerald-700: #347859;
+  --color-emerald-800: #2a6149;
+  --color-emerald-900: #214c3a;
+  --color-emerald-950: #0f2a22;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-nav: "Roboto", "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -16,8 +33,19 @@ button, input, select, textarea { font: inherit; }
 
 .container { width: min(1180px, calc(100% - 32px)); margin-inline: auto; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: 999px; padding: .82rem 1.25rem; font-weight: 800; transition: .2s ease; min-height: 44px; }
-.btn-primary { background: #16a34a; color: white; box-shadow: 0 16px 32px rgba(22,163,74,.24); }
-.btn-primary:hover { background: #15803d; transform: translateY(-1px); }
+.btn-primary { background: #4ca154; color: white; box-shadow: 0 16px 32px rgba(76,161,84,.24); }
+.btn-primary:hover { background: #3e8a4c; transform: translateY(-1px); }
+.btn-header { min-height: 40px; padding: .45rem 1.1rem; font-weight: 900; line-height: 1.1; text-align: center; box-shadow: none; }
+.btn-header.is-active { background: #a2aaa3; }
+.nav-link { position: relative; font-family: var(--font-nav); font-weight: 800; font-size: .875rem; color: #000; white-space: nowrap; padding-block: .35rem; transition: color .2s ease; }
+.nav-link:hover, .nav-link.active { color: #347859; }
+.nav-link.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; background: #347859; }
+.nav-dropdown { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); padding-top: .75rem; display: none; }
+.nav-group:hover .nav-dropdown, .nav-group:focus-within .nav-dropdown { display: block; }
+.nav-dropdown-item { display: block; padding: .6rem 1.5rem; background: #eef6ee; color: #4ca154; font-weight: 800; text-align: center; white-space: nowrap; transition: background .2s ease; }
+.nav-dropdown-item:hover, .nav-dropdown-item.active { background: #dcefe2; color: #347859; }
+.course-tab { display: inline-block; padding: .3rem 2.25rem .3rem .7rem; font-weight: 800; color: #347859; background: linear-gradient(90deg, #d7f9e4 0%, #d7f9e4 70%, rgba(215,249,228,0) 100%); border-top-right-radius: 1.5rem 100%; }
+.team-card { border: 1px solid #347859; border-radius: 1.25rem; background: #fff; }
 .btn-secondary { border: 1px solid rgba(255,255,255,.35); color: white; background: rgba(255,255,255,.08); }
 .btn-outline { border: 1px solid #d1d5db; color: #0f172a; background: white; }
 .section { padding: 84px 0; }
@@ -42,6 +70,4 @@ button, input, select, textarea { font: inherit; }
 @media (max-width: 760px) {
   .container { width: min(100% - 24px, 1180px); }
   .section { padding: 56px 0; }
-  .hide-mobile { display: none !important; }
-  .panel-shell { padding-bottom: 76px; }
 }

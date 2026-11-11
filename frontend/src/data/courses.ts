@@ -1,3 +1,11 @@
+import kureselIklim from "../assets/courses/kuresel-iklim.jpg";
+import uretimDongusellik from "../assets/courses/uretim-dongusellik.jpg";
+import emisyonAzaltim from "../assets/courses/emisyon-azaltim.jpg";
+import tsrs from "../assets/courses/tsrs.jpg";
+import urunTasarimi from "../assets/courses/urun-tasarimi.jpg";
+import dortR from "../assets/courses/4r-prensibi.jpg";
+import abDongusel from "../assets/courses/ab-dongusel-ekonomi.jpg";
+
 export type Lesson = { id: string; title: string; videoUrl: string; duration?: string };
 
 export type Course = {
@@ -5,12 +13,24 @@ export type Course = {
   title: string;
   instructor: string;
   level: "FREE";
+  image?: string;
   lessons: Lesson[];
 };
 
 const drivePreviewUrl = (fileId: string) => `https://drive.google.com/file/d/${fileId}/preview`;
 
-export const courses: Course[] = [
+// Card images from the YeşilPORT design deck; courses without one get a branded placeholder.
+const courseImages: Record<string, string> = {
+  "kuresel-iklim-degisikligi-ve-uluslararasi-cevre-politikalari": kureselIklim,
+  "uretim-sureclerinde-dongusellik": uretimDongusellik,
+  "emisyon-azaltim-hedefleri": emisyonAzaltim,
+  "surdurulebilirlik-raporlama-standartlari-tsrs": tsrs,
+  "surdurulebilir-urun-tasarimi": urunTasarimi,
+  "4r-prensibi": dortR,
+  "ab-dongusel-ekonomi-aksiyon-plani": abDongusel,
+};
+
+const courseList: Course[] = [
   {
     id: "kuresel-iklim-degisikligi-ve-uluslararasi-cevre-politikalari",
     title: "Küresel İklim Değişikliği ve Uluslararası Çevre Politikaları",
@@ -208,3 +228,5 @@ export const courses: Course[] = [
     ],
   },
 ];
+
+export const courses: Course[] = courseList.map((course) => ({ ...course, image: courseImages[course.id] }));
